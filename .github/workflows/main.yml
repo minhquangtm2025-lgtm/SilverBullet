@@ -31,7 +31,7 @@ jobs:
           if (-not $sln) { throw "Không tìm thấy file .sln!" }
           "SLN=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      # FIX LỖI Ở ĐÂY: Bỏ -Property vì nuget restore không cần nó
+      # Restore NuGet
       - name: Restore
         shell: pwsh
         run: nuget restore "$env:SLN"
@@ -41,11 +41,15 @@ jobs:
         shell: pwsh
         run: msbuild "$env:SLN" /p:Configuration=Release /p:Platform="x64" /verbosity:minimal
 
-      # Tải kết quả build lên
+      # 📤 UPLOAD THÀNH PHẨM (Đã sửa lỗi đường dẫn)
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: SilverBullet-Build
           path: |
-            **/bin/Release/*.exe
-            **/bin/Release/*.dll
+            **/bin/Release/
+            **/bin/x64/Release/
+            **/*.nupkg
+            **/*.exe
+            **/*.dll
+          if-no-files-found: warn
