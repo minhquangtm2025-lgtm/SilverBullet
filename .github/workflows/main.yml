@@ -10,11 +10,15 @@ jobs:
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
       - name: Restore NuGet Packages
-        run: nuget restore OpenBullet.sln
+        run: |
+          $slnFile = Get-ChildItem -Filter *.sln -Recurse | Select-Object -First 1
+          nuget restore $slnFile.FullName
       - name: Build Solution
-        run: msbuild OpenBullet.sln /p:Configuration=Release /p:Platform="Any CPU"
+        run: |
+          $slnFile = Get-ChildItem -Filter *.sln -Recurse | Select-Object -First 1
+          msbuild $slnFile.FullName /p:Configuration=Release /p:Platform="Any CPU"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: SilverBullet-Executable
-          path: OpenBullet/bin/Release/
+          path: "**/bin/Release/"
