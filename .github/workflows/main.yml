@@ -18,29 +18,32 @@ jobs:
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
 
-      # 🔥 đảm bảo không thiếu .NET
+      # Cài đặt .NET Framework cần thiết
       - name: Install .NET Framework 4.7.2
         run: choco install netfx-4.7.2-devpack -y
 
-      # 🔍 tìm file .sln
+      # Tìm file .sln và lưu đường dẫn vào môi trường GitHub với encoding chuẩn UTF-8
       - name: Find Solution
         id: find_sln
         shell: pwsh
         run: |
           $sln = Get-ChildItem -Recurse -Filter *.sln | Select-Object -First 1
-          if (-not $sln) { throw "Không tìm thấy .sln" }
-          echo "SLN=$($sln.FullName)" >> $env:GITHUB_ENV
+          if (-not $sln) { throw "Không tìm thấy file .sln trong repository!" }
+          Write-Host "Đã tìm thấy: $($sln.FullName)"
+          "SLN=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      # 📦 restore
+      # Thực hiện Restore sử dụng PowerShell để nhận biến $env:SLN
       - name: Restore
-        run:   nuget restore $env:SLN -Property Configuration=Release -Property Platform="x64"
+        shell: pwsh
+        run: nuget restore "$env:SLN" -Property Configuration=Release -Property Platform="x64"
 
-      # ⚙️ build
+      # Thực hiện Build
       - name: Build
-        run: msbuild $env:SLN /p:Configuration=Release /p:Platform="x64" /verbosity:minimal
+        shell: pwsh
+        run: msbuild "$env:SLN" /p:Configuration=Release /p:Platform="x64" /verbosity:minimal
 
-      # 📤 upload
-      - name: Upload
+      # Tải kết quả build (Artifact) lên GitHub
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: SilverBullet-Build
