@@ -4,13 +4,17 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
+      - name: Restore NuGet Packages
+        run: nuget restore OpenBullet.sln
       - name: Build Solution
-        run: msbuild OpenBullet.sln /p:Configuration=Release
+        run: msbuild OpenBullet.sln /p:Configuration=Release /p:Platform="Any CPU"
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: SilverBullet-Executable
           path: OpenBullet/bin/Release/
