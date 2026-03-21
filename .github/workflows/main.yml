@@ -33,7 +33,7 @@ jobs:
 
       # 📦 restore
       - name: Restore
-        run: nuget restore $env:SLN
+        run:   nuget restore $env:SLN -Property Configuration=Release -Property Platform="x64"
 
       # ⚙️ build
       - name: Build
