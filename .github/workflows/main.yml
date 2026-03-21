@@ -18,31 +18,30 @@ jobs:
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
 
-      # Cài đặt .NET Framework cần thiết
+      # Cài đặt .NET Framework 4.7.2
       - name: Install .NET Framework 4.7.2
         run: choco install netfx-4.7.2-devpack -y
 
-      # Tìm file .sln và lưu đường dẫn vào môi trường GitHub với encoding chuẩn UTF-8
+      # Tìm file .sln
       - name: Find Solution
         id: find_sln
         shell: pwsh
         run: |
           $sln = Get-ChildItem -Recurse -Filter *.sln | Select-Object -First 1
-          if (-not $sln) { throw "Không tìm thấy file .sln trong repository!" }
-          Write-Host "Đã tìm thấy: $($sln.FullName)"
+          if (-not $sln) { throw "Không tìm thấy file .sln!" }
           "SLN=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      # Thực hiện Restore sử dụng PowerShell để nhận biến $env:SLN
+      # FIX LỖI Ở ĐÂY: Bỏ -Property vì nuget restore không cần nó
       - name: Restore
         shell: pwsh
-        run: nuget restore "$env:SLN" -Property Configuration=Release -Property Platform="x64"
+        run: nuget restore "$env:SLN"
 
       # Thực hiện Build
       - name: Build
         shell: pwsh
         run: msbuild "$env:SLN" /p:Configuration=Release /p:Platform="x64" /verbosity:minimal
 
-      # Tải kết quả build (Artifact) lên GitHub
+      # Tải kết quả build lên
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
