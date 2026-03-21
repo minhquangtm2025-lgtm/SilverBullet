@@ -1,21 +1,47 @@
-name: Build SilverBullet
-on: [push, workflow_dispatch]
+name: Build SilverBullet (Legacy .NET)
+
+on:
+  push:
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
+      # 1. Lấy code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Setup MSBuild
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
+
+      # 3. Setup NuGet
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
-      - name: Build
-        run: |
-          $sln = Get-ChildItem -Recurse -Filter *.sln | Select-Object -First 1
-          nuget restore $sln.FullName
-          msbuild $sln.FullName /p:Configuration=Release /p:Platform="Any CPU"
-      - name: Upload
+
+      # 4. Cài .NET Framework 4.7.2 (QUAN TRỌNG)
+      - name: Install .NET Framework 4.7.2 Dev Pack
+        run: choco install netfx-4.7.2-devpack -y
+
+      # 5. Fix source NuGet (tránh lỗi link chết)
+      - name: Add NuGet Source
+        run: nuget sources Add -Name nuget.org -Source https://api.nuget.org/v3/index.json
+
+      # 6. Restore package
+      - name: Restore Packages
+        run: nuget restore OpenBullet.sln
+
+      # 7. Build
+      - name: Build Solution
+        run: msbuild OpenBullet.sln /p:Configuration=Release /p:Platform="x64"
+
+      # 8. Upload file build
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SilverBullet-Executable
-          path: "**/bin/Release/"
+          name: SilverBullet-Build
+          path: |
+            **/bin/Release/*.exe
+            **/bin/Release/*.dll
