@@ -1,4 +1,4 @@
-name: Build SilverBullet REAL EXE ONLY
+name: Build SilverBullet ABSOLUTE FINAL
 
 on:
   push:
@@ -38,21 +38,21 @@ jobs:
           msbuild "$env:SLN" /p:Configuration=Release /p:Platform="Any CPU" /verbosity:minimal
           exit 0
 
-      # 📤 CHỈ HỐT FILE CHẠY (.EXE/.DLL) - LOẠI BỎ CODE RÁC
+      # 📤 BẢN "VÉT MÁNG" CỰC ĐOAN: QUÉT TOÀN BỘ MÁY ẢO
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: SilverBullet-THE-REAL-APP
+          name: SilverBullet-GIFT-FOR-YOU
           path: |
-            **/bin/Release/
-            **/bin/*/Release/
             **/*.exe
             **/*.dll
             **/*.config
-          # 🛑 Đuổi cổ đống code .cs và .csproj gây rối mắt
+            **/*.json
+          # Loại bỏ đống code .cs và .csproj để ông không bị rối
           exclude: |
             **/*.cs
             **/*.csproj
             **/*.sln
+            **/obj/**
             .github/**
-            packages/**
+          if-no-files-found: error
