@@ -1,4 +1,4 @@
-name: Build SilverBullet Stable
+name: Build SilverBullet Ultimate
 
 on:
   push:
@@ -6,49 +6,73 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
 
     steps:
+      # 📥 Lấy code
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ⚙️ Setup MSBuild
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      # 📦 Setup NuGet
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
 
-      # Bước này cực kỳ quan trọng để không lỗi build
+      # 🔗 Đảm bảo nguồn NuGet hoạt động
+      - name: Add NuGet Source
+        run: nuget sources Add -Name nuget.org -Source https://api.nuget.org/v3/index.json
+
+      # 🧱 Cài .NET Framework 4.7.2 (cực quan trọng)
       - name: Install .NET Framework 4.7.2
         run: choco install netfx-4.7.2-devpack -y
 
-      # Tìm file .sln linh hoạt
+      # 🔍 Tìm file .sln
       - name: Find Solution
-        id: find_sln
         shell: pwsh
         run: |
+          Write-Host "🔍 Searching for .sln file..."
           $sln = Get-ChildItem -Recurse -Filter *.sln | Select-Object -First 1
-          if (-not $sln) { throw "Không tìm thấy file .sln!" }
-          "SLN=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      # Restore NuGet - đã bỏ -Property gây lỗi
+          if (-not $sln) {
+            Write-Error "❌ Không tìm thấy file .sln!"
+            exit 1
+          }
+
+          Write-Host "✅ Found solution: $($sln.FullName)"
+          echo "SLN=$($sln.FullName)" >> $env:GITHUB_ENV
+
+      # 📦 Restore packages
       - name: Restore
         shell: pwsh
-        run: nuget restore "$env:SLN"
+        run: |
+          Write-Host "📦 Restoring packages..."
+          nuget restore "$env:SLN"
 
-      # Build với Platform Any CPU để khớp với net20 trong log của bạn
+      # 🛠️ Build project
       - name: Build
         shell: pwsh
-        run: msbuild "$env:SLN" /p:Configuration=Release /p:Platform="Any CPU" /verbosity:minimal
+        run: |
+          Write-Host "⚙️ Building solution..."
+          msbuild "$env:SLN" `
+            /p:Configuration=Release `
+            /p:Platform="Any CPU" `
+            /verbosity:normal
 
-      # 📤 BƯỚC "HÁI QUẢ": Quét toàn bộ để lấy file net20 và nupkg
+      # 📂 Liệt kê file output (debug cực mạnh)
+      - name: List Output Files
+        run: dir -Recurse
+
+      # 📤 Upload tất cả artifact
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: SilverBullet-Build
           path: |
-            **/bin/Release/
-            **/*.nupkg
-            **/*.dll
+            **/bin/Release/**
             **/*.exe
+            **/*.dll
+            **/*.nupkg
           if-no-files-found: warn
