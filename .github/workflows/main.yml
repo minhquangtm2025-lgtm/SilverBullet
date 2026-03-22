@@ -1,4 +1,4 @@
-name: Build SilverBullet FINAL
+name: Build SilverBullet ULTIMATE FINAL
 
 on:
   push:
@@ -18,33 +18,32 @@ jobs:
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
 
-      - name: Add NuGet Source
-        run: nuget sources Add -Name nuget.org -Source https://api.nuget.org/v3/index.json
-
       - name: Install .NET Framework 4.7.2
         run: choco install netfx-4.7.2-devpack -y
 
       - name: Find Solution
         shell: pwsh
         run: |
+          Write-Host "🔍 Searching for .sln file..."
           $sln = Get-ChildItem -Recurse -Filter *.sln | Select-Object -First 1
           if (-not $sln) {
-            Write-Error "Không tìm thấy file .sln!"
+            Write-Error "❌ Không tìm thấy file .sln!"
             exit 1
           }
-          echo "SLN=$($sln.FullName)" >> $env:GITHUB_ENV
+          Write-Host "✅ Found: $($sln.FullName)"
+          "SLN=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Restore
         shell: pwsh
-        run: nuget restore "$env:SLN"
+        run: |
+          Write-Host "📦 Restoring packages..."
+          nuget restore "$env:SLN"
 
-      - name: Build (Force Success)
+      - name: Build
         shell: pwsh
         run: |
-          msbuild "$env:SLN" `
-            /p:Configuration=Release `
-            /p:Platform="Any CPU" `
-            /verbosity:minimal
+          Write-Host "⚙️ Building solution..."
+          msbuild "$env:SLN" /p:Configuration=Release /p:Platform="Any CPU" /verbosity:minimal
           exit 0
 
       - name: Upload Artifacts
