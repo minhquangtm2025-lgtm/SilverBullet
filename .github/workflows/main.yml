@@ -1,4 +1,4 @@
-name: Build SilverBullet ULTIMATE FINAL
+name: Build SilverBullet COMPLETE PACK
 
 on:
   push:
@@ -18,9 +18,11 @@ jobs:
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
 
+      # Cài đặt môi trường .NET Framework cần thiết
       - name: Install .NET Framework 4.7.2
         run: choco install netfx-4.7.2-devpack -y
 
+      # Tìm file .sln của SilverBullet
       - name: Find Solution
         shell: pwsh
         run: |
@@ -33,26 +35,30 @@ jobs:
           Write-Host "✅ Found: $($sln.FullName)"
           "SLN=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
+      # Restore thư viện NuGet
       - name: Restore
         shell: pwsh
         run: |
           Write-Host "📦 Restoring packages..."
           nuget restore "$env:SLN"
 
+      # Build toàn bộ Solution (Bao gồm OpenBullet UI và CLI)
       - name: Build
         shell: pwsh
         run: |
-          Write-Host "⚙️ Building solution..."
+          Write-Host "⚙️ Building SilverBullet (OpenBullet)..."
           msbuild "$env:SLN" /p:Configuration=Release /p:Platform="Any CPU" /verbosity:minimal
           exit 0
 
+      # 📤 HỐT TRỌN THÀNH PHẨM (Tập trung vào file chạy .exe)
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: SilverBullet-Build
+          name: SilverBullet-Full-Package
           path: |
-            **/bin/Release/**
+            **/bin/Release/
             **/*.exe
             **/*.dll
-            **/*.nupkg
+            **/*.config
+            **/*.json
           if-no-files-found: warn
