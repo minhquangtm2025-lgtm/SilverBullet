@@ -18,9 +18,11 @@ jobs:
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
 
+      # Bước này cực kỳ quan trọng để không lỗi build
       - name: Install .NET Framework 4.7.2
         run: choco install netfx-4.7.2-devpack -y
 
+      # Tìm file .sln linh hoạt
       - name: Find Solution
         id: find_sln
         shell: pwsh
@@ -29,15 +31,17 @@ jobs:
           if (-not $sln) { throw "Không tìm thấy file .sln!" }
           "SLN=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
+      # Restore NuGet - đã bỏ -Property gây lỗi
       - name: Restore
         shell: pwsh
         run: nuget restore "$env:SLN"
 
+      # Build với Platform Any CPU để khớp với net20 trong log của bạn
       - name: Build
         shell: pwsh
-        run: msbuild "$env:SLN" /p:Configuration=Release /p:Platform="x64" /verbosity:minimal
+        run: msbuild "$env:SLN" /p:Configuration=Release /p:Platform="Any CPU" /verbosity:minimal
 
-      # 📤 BƯỚC QUYẾT ĐỊNH: Lấy toàn bộ những gì có trong máy ảo sau khi build
+      # 📤 BƯỚC "HÁI QUẢ": Quét toàn bộ để lấy file net20 và nupkg
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -45,6 +49,6 @@ jobs:
           path: |
             **/bin/Release/
             **/*.nupkg
-            **/*.exe
             **/*.dll
-          if-no-files-found: warn # Không báo lỗi đỏ nếu thiếu 1 vài file lẻ
+            **/*.exe
+          if-no-files-found: warn
